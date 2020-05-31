@@ -7,7 +7,7 @@
 
 ## Availables probes
 
-The probes are located in the `probe` directory.
+The probes are located in the `probes` directory.
 
 ## Available scenario
 
