@@ -1,4 +1,4 @@
-const walkers = require('../util/walkers');
+const walkers = require('../../util/walkers');
 
 class findRedisUsage {
 

@@ -1,12 +1,10 @@
-const walkers = require('../util/walkers');
+const walkers = require('../../util/walkers');
 
 class findMongoDBCollections {
 
-    body;
-    collections = [];
-
     constructor(body) {
         this.body = body;
+        this.collections = [];
     }
 
 

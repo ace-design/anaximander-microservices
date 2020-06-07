@@ -1,15 +1,12 @@
-const walkers = require('../util/walkers');
+const walkers = require('../../util/walkers');
 
 class findRoutes {
-
-    body;
-    appString;
-    appUsage = [];
-    routes = [];
 
     constructor(body, appString = null) {
         this.body = body;
         this.appString = appString;
+        this.appUsage = [];
+        this.routes = [];
     }
 
     run() {

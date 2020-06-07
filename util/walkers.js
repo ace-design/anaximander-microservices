@@ -12,7 +12,7 @@ exports.recursiveWalkIn = function(body, typeResearch, name, parent = null) {
     let success = false;
     if (Array.isArray(body)) {
         for (let i=0; i<body.length;i++) {
-            [success, value, ancestors] = recursiveWalkIn(body[i], typeResearch, name, body);
+            [success, value, ancestors] = this.recursiveWalkIn(body[i], typeResearch, name, body);
             if (success) {
                 ancestors.push(body[i]);
                 return [success, value, ancestors];
@@ -33,7 +33,7 @@ exports.recursiveWalkIn = function(body, typeResearch, name, parent = null) {
                     return [success, value, ancestors];
                 }
                 if (typeof body[prop] === "object") {
-                    [success, value, ancestors] = recursiveWalkIn(body[prop], typeResearch, name, body);
+                    [success, value, ancestors] = this.recursiveWalkIn(body[prop], typeResearch, name, body);
                     if (success) {
                         ancestors.push(body);
                         return [success, value, ancestors];
@@ -57,7 +57,7 @@ exports.recursiveWalkInArray = function(body, typeResearch, name, parent = null)
     let values = [];
     if (Array.isArray(body)) {
         for (let i=0; i<body.length;i++) {
-            let returnedValues = recursiveWalkInArray(body[i], typeResearch, name, body);
+            let returnedValues = this.recursiveWalkInArray(body[i], typeResearch, name, body);
             if (returnedValues.length > 0) {
                 returnedValues.forEach(rv => {
                     values.push(rv);
@@ -71,7 +71,7 @@ exports.recursiveWalkInArray = function(body, typeResearch, name, parent = null)
                     values.push(parent);
                 }
                 if (typeof body[prop] === "object") {
-                    let returnedValues = recursiveWalkInArray(body[prop], typeResearch, name, body);
+                    let returnedValues = this.recursiveWalkInArray(body[prop], typeResearch, name, body);
                     if (returnedValues.length > 0) {
                         returnedValues.forEach(rv => {
                             values.push(rv);
@@ -97,7 +97,7 @@ exports.getAncestors = function(body, node, parent = null) {
     let success = false;
     if (Array.isArray(body)) {
         for (let i=0; i<body.length;i++) {
-            [success, value, ancestors] = getAncestors(body[i], node, body);
+            [success, value, ancestors] = this.getAncestors(body[i], node, body);
             if (success) {
                 ancestors.push(body[i]);
                 return [success, value, ancestors];
@@ -112,7 +112,7 @@ exports.getAncestors = function(body, node, parent = null) {
         for (let prop in body) {
             if (body.hasOwnProperty(prop)) {
                 if (typeof body[prop] === "object") {
-                    [success, value, ancestors] = getAncestors(body[prop], node, body);
+                    [success, value, ancestors] = this.getAncestors(body[prop], node, body);
                     if (success) {
                         ancestors.push(body);
                         return [success, value, ancestors];

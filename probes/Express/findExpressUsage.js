@@ -1,11 +1,6 @@
-const walkers = require('../util/walkers');
+const walkers = require('../../util/walkers');
 
 class findExpressUsage {
-
-    body;
-    expressString = '';
-    appString;
-    ancestors = [];
 
     /**
      *
@@ -13,6 +8,9 @@ class findExpressUsage {
      */
     constructor(body) {
         this.body = body;
+        this.expressString = '';
+        this.appString = null;
+        this.ancestors = [];
     }
 
     /**

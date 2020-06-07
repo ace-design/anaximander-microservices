@@ -2,13 +2,10 @@
 
 class findRedisClient {
 
-    body;
-    redisVar;
-    redisClient;
-
     constructor(body, redis) {
         this.body = body;
         this.redisVar = redis;
+        this.redisClient = null;
     }
 
     run() {
