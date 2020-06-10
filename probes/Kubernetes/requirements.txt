@@ -1,11 +1,5 @@
 pudb==2019.2
 PyYAML==5.3.1
 dockerfile-parse==0.0.17
-jupyter==1.0.0
 wheel==0.34.2
-networkx==2.4
-matplotlib==3.2.1
-uri==2.0.1
-scipy==1.4.1
 graphviz==0.14
-pygraphviz==1.5
