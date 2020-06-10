@@ -40,8 +40,11 @@ github.com/GoogleCloudPlatform/microservices-demo v0.2.0 h1:h060IiGdj2i9uApr+5m4
 github.com/GoogleCloudPlatform/microservices-demo v0.2.0/go.mod h1:l+8vGB1KrKeJphMkn06TJgnqF7DUoRI+8YvDiGyWx5o=
 github.com/ace-design/anaximander-microservices v0.0.0-20200610123224-0a139ffccf44 h1:Yt20Y013fO4JtYQFMl9rrRLiOmwZTukZ7+PO/U4U+fk=
 github.com/ace-design/anaximander-microservices v0.0.0-20200610161213-da367c040893 h1:Qbn/mKzoZgPn13kzPsYk5f3pjBJbIZvFEKBo84Zx91Y=
+github.com/ace-design/anaximander-microservices v0.0.0-20200610212115-17132174454d h1:n1w2DRJXy9HOmImXJ4jaf6OnzKiRIkL+0CZQOTzX0M8=
 github.com/ace-design/anaximander-microservices/util/go/parser v0.0.0-20200610161213-da367c040893 h1:JwlHC7/ShtRwZwXEScitg5yMaQTlvwBuPcQNRKGzi0Y=
 github.com/ace-design/anaximander-microservices/util/go/parser v0.0.0-20200610161213-da367c040893/go.mod h1:tkPVKgUhn4pPm8CPos3VGiol05t/5d0W6fIRCMuZaGA=
+github.com/ace-design/anaximander-microservices/util/go/parser v0.0.0-20200610212115-17132174454d h1:nWU7mYQO79q+aZ73qM/DHPrj8Di3OyCuSEJoulmEnKQ=
+github.com/ace-design/anaximander-microservices/util/go/parser v0.0.0-20200610212115-17132174454d/go.mod h1:tkPVKgUhn4pPm8CPos3VGiol05t/5d0W6fIRCMuZaGA=
 github.com/aws/aws-sdk-go v1.23.20 h1:2CBuL21P0yKdZN5urf2NxKa1ha8fhnY+A3pBCHFeZoA=
 github.com/aws/aws-sdk-go v1.23.20/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN924inxo=
 github.com/census-instrumentation/opencensus-proto v0.2.1 h1:glEXhBS5PSLLv4IXzLA5yPRVX4bilULVyxxbrfOtDAk=
@@ -173,6 +176,7 @@ golang.org/x/mod v0.1.1-0.20191105210325-c90efee705ee/go.mod h1:QqPTAvyqsEbceGzB
 golang.org/x/mod v0.1.1-0.20191107180719-034126e5016b/go.mod h1:QqPTAvyqsEbceGzBzNggFXnrqF1CaUcvgkdR5Ot7KZg=
 golang.org/x/mod v0.2.0 h1:KU7oHjnv3XNWfa5COkzUifxZmxp1TyI7ImMXqFxLwvQ=
 golang.org/x/mod v0.2.0/go.mod h1:s0Qsj1ACt9ePp/hMypM3fl4fZqREWJwdYDEqhRiZZUA=
+golang.org/x/mod v0.3.0 h1:RM4zey1++hCTbCVQfnWeKs9/IEsaBLA8vTkd0WVtmH4=
 golang.org/x/mod v0.3.0/go.mod h1:s0Qsj1ACt9ePp/hMypM3fl4fZqREWJwdYDEqhRiZZUA=
 golang.org/x/net v0.0.0-20180724234803-3673e40ba225/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=
 golang.org/x/net v0.0.0-20180826012351-8a410e7b638d/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=
