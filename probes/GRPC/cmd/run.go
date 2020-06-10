@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/ace-design/anaximander-microservices/utils/go/parser"
+	"github.com/ace-design/anaximander-microservices/util/go/parser"
 	probe "github.com/ace-design/anaximander-microservices/probes/GRPC"
 
 	log "github.com/sirupsen/logrus"

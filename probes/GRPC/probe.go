@@ -3,7 +3,7 @@ package grpc
 import (
 	"golang.org/x/tools/go/ssa"
 
-	"github.com/ace-design/anaximander-microservices/utils/go/parser"
+	"github.com/ace-design/anaximander-microservices/util/go/parser"
 
 	log "github.com/sirupsen/logrus"
 )

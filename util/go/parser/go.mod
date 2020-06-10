@@ -1,4 +1,4 @@
-module github.com/ace-design/anaximander-microservices/utils/go/parser
+module github.com/ace-design/anaximander-microservices/util/go/parser
 
 go 1.14
 
