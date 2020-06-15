@@ -1,6 +1,7 @@
 const walkers = require('../../util/walkers');
 const aParser = require('../../util/acornParser');
 const fFiles = require('../../util/findFiles');
+const fs = require('fs');
 
 (async function () {
 
