@@ -1,7 +1,5 @@
-FROM node:10.13.0
+FROM probeutiljs
 
-#CreateApp Workdir
-RUN mkdir -p /srv/probe
 WORKDIR /srv/probe
 
 COPY package*.json ./
@@ -10,7 +8,8 @@ RUN npm install
 
 #Bundle App Source
 COPY . .
+RUN sed -i 's/\.\.\/\.\.\/util/\.\/util/g' findExpressUsage.js
 
 #Run the app
-CMD [ "node", "index.js" ]
+CMD [ "node", "findExpressUsage.js" ]
 

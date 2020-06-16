@@ -14,14 +14,11 @@ const fs = require('fs');
         });
     }
     else if (fs.lstatSync(file).isDirectory()) {
-        await fFiles.walkFiles(file, function(err, result) {
-            if (err) throw err;
-            results = Array.from(new Set(result));
-            results.forEach( subFile => {
-                filesContent.push({
-                    file : subFile,
-                    body : aParser.acornParser(subFile),
-                });
+        let results = await fFiles.walk(file);
+        results.forEach( subFile => {
+            filesContent.push({
+                file : subFile,
+                body : aParser.acornParser(subFile),
             });
         });
     }
