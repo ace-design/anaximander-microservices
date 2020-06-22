@@ -45,3 +45,9 @@ func VisitCall(v *parser.Visitor, instr *ssa.Call) {
 		}
 	}
 }
+
+func (p *GrpcProbe) PrintSchema(serviceName string, serviceId string) error {
+
+
+	return nil
+}
