@@ -1,23 +1,14 @@
 from dataclasses import dataclass
-from typing import List
+from typing import Set
 from enum import Enum
+import sys
+import logging
+from subprocess import run
+import json
 
-# { id: "fig_6b",
-#   vertices: [
-#     { id: "s1", type: Type.Service, props: [ { name: "name", value: "payment" }] },
-#     { id: "s2", type: Type.Service, props: [ { name: "name", value: "orders" }] },
-#     { id: "r1", type="route, props: [ { name: "path", value: "/paymentAuth"}, { name: "verb", value: "GET"} ] },
-#     { id: "r2", type="route, props: [ { name: "path", value: "/health"}, { name: "verb", value: "GET"} ] },
-#     { id: "r3", type="route, props: [ { name: "path", value: "/orders"}, { name: "verb", value: "GET"} ] },
-#     { id: "r4", type="route, props: [ { name: "path", value: "/orders"}, { name: "verb", value: "POST"} ] }
-#   ],
-#   edges: [
-#     { from: "s1", to: "r1", type: "exposes"},
-#     { from: "s2", to: "r2", type: "exposes"},
-#     { from: "s2", to: "r3", type: "exposes"},
-#     { from: "s2", to: "r4", type: "exposes"}
-#   ]
-# }
+
+logging.basicConfig(level=logging.DEBUG)
+
 
 class EdgeType(Enum):
     Exposes = "exposes"
@@ -31,44 +22,50 @@ class VerticeType(Enum):
     Database = "database"
 
 
-@dataclass
+@dataclass(eq=True, frozen=True)
 class Prop(object):
     name: str
     value: str
 
 
-@dataclass
+@dataclass(eq=True, frozen=True)
 class Vertice(object):
-    id: str
     type: str
-    props: List[Prop]
+    props: Set[Prop]
 
 
-@dataclass
+@dataclass(eq=True, frozen=True)
 class Edge(object):
     _from: Vertice
     to: Vertice
     type: EdgeType
 
-frontend = Vertice(id="frontend", type=VerticeType.Service, props=[Prop(name="name", value="front-end")]),
-catalogue = Vertice(id="catalogue", type=VerticeType.Service, props=[Prop(name="name", value="catalogue")]),
-orders = Vertice(id="orders", type=VerticeType.Service, props=[Prop(name="name", value="orders")]),
-carts = Vertice(id="carts", type=VerticeType.Service, props=[Prop(name="name", value="carts")]),
-payment = Vertice(id="payment", type=VerticeType.Service, props=[Prop(name="name", value="payment")]),
-queue_master = Vertice(id="queue-master", type=VerticeType.Service, props=[Prop(name="name", value="queue-master")]),
-shipping = Vertice(id="shipping", type=VerticeType.Service, props=[Prop(name="name", value="shipping")]),
-user = Vertice(id="user", type=VerticeType.Service, props=[Prop(name="name", value="user")]),
 
+frontend = Vertice(type=VerticeType.Service, props=frozenset({Prop(name="name", value="front-end")}))
+catalogue = Vertice(type=VerticeType.Service, props=frozenset({Prop(name="name", value="catalogue")}))
+orders = Vertice(type=VerticeType.Service, props=frozenset({Prop(name="name", value="orders")}))
+carts = Vertice(type=VerticeType.Service, props=frozenset({Prop(name="name", value="carts")}))
+payment = Vertice(type=VerticeType.Service, props=frozenset({Prop(name="name", value="payment")}))
+queue_master = Vertice(type=VerticeType.Service, props=frozenset({Prop(name="name", value="queue-master")}))
+shipping = Vertice(type=VerticeType.Service, props=frozenset({Prop(name="name", value="shipping")}))
+user = Vertice(type=VerticeType.Service, props=frozenset({Prop(name="name", value="user")}))
 
-carts_db = Vertice(id="carts-db", type=VerticeType.database, props=[Prop(name="name", value="carts-db")]),
-orders_db = Vertice(id="orders-db", type=VerticeType.Database, props=[Prop(name="name", value="orders-db")]),
-user_db = Vertice(id="user-db", type=VerticeType.Database, props=[Prop(name="name", value="user-db")]),
+edge_router = Vertice(type=VerticeType.Service, props=frozenset({Prop(name="name", value="edge_router")}))
+consul = Vertice(type=VerticeType.Service, props=frozenset({Prop(name="name", value="consul")}))
+poincare = Vertice(type=VerticeType.Service, props=frozenset({Prop(name="name", value="poincare")}))
+wilson = Vertice(type=VerticeType.Service, props=frozenset({Prop(name="name", value="wilson")}))
+kalam = Vertice(type=VerticeType.Service, props=frozenset({Prop(name="name", value="kalam")}))
 
-rabbitmq = Vertice(id="rabbitmq", type=VerticeType.Messaging, props=[Prop(name="name", value="rabbitmq")]),
+carts_db = Vertice(type=VerticeType.Database, props=frozenset({Prop(name="name", value="carts-db")}))
+orders_db = Vertice(type=VerticeType.Database, props=frozenset({Prop(name="name", value="orders-db")}))
+user_db = Vertice(type=VerticeType.Database, props=frozenset({Prop(name="name", value="user-db")}))
+
+rabbitmq = Vertice(type=VerticeType.Messaging, props=frozenset({Prop(name="name", value="rabbitmq")}))
 
 initial_map = {
     "id": "initial-map",
-    "vertices": [
+    "vertices": {
+        edge_router,
         frontend,
         catalogue,
         orders,
@@ -83,8 +80,14 @@ initial_map = {
         user_db,
 
         rabbitmq,
-    ],
-    "edges": [
+
+        edge_router,
+        consul,
+        poincare,
+        wilson,
+        kalam,
+    },
+    "edges": {
         Edge(_from=frontend, to=catalogue, type=EdgeType.Exposes),
         Edge(_from=frontend, to=orders, type=EdgeType.Exposes),
 
@@ -99,6 +102,56 @@ initial_map = {
         Edge(_from=user, to=user_db, type=EdgeType.Stores),
 
         Edge(_from=shipping, to=rabbitmq, type=EdgeType.Publishes),
-        Edge(_from=rabbitmq, to=rabbitmq, type=EdgeType.Consumes),
-    ],
+        Edge(_from=queue_master, to=rabbitmq, type=EdgeType.Exposes),
+
+        Edge(_from=edge_router, to=frontend, type=EdgeType.Exposes),
+        Edge(_from=poincare, to=frontend, type=EdgeType.Exposes),
+        Edge(_from=poincare, to=rabbitmq, type=EdgeType.Exposes),
+        Edge(_from=wilson, to=rabbitmq, type=EdgeType.Exposes),
+        Edge(_from=kalam, to=rabbitmq, type=EdgeType.Exposes),
+    },
 }
+
+def dict_to_map(v):
+    edges = set()
+    vertices = set()
+
+    for vertice in v['vertices']:
+        vertice_type = VerticeType.Service
+        if vertice['type'] == "messaging":
+            vertice_type = VerticeType.Messaging
+        elif vertice['type'] == "database":
+            vertice_type = VerticeType.Database
+
+        props = set()
+        for prop in vertice['props']:
+            props.add(Prop(**prop))
+
+        vertices.add(Vertice(type=vertice_type, props=frozenset(props)))
+
+    return {'edges': edges, 'vertices': vertices}
+
+
+
+def kubernetes_probe(project_dir):
+    logging.debug("Running k8s probe")
+    process = run(["docker", "run", "-v", f"{project_dir}:/mnt/k8s/", "-ti", "ax-kubernetes", "python", "kubernetes.py", "/mnt/k8s"], check=True, capture_output=True)
+    probe_map = dict_to_map(json.loads(process.stdout))
+
+    # Union of the initial map vertices and the k8s map vertices
+    vertices = initial_map['vertices'] & probe_map['vertices']
+
+    # Remove all "service" type vertices that are not found by the k8s probe
+    for vertice in initial_map['vertices']:
+        if vertice.type != VerticeType.Service:
+            vertices.add(vertice)
+
+    return {'id': 'k8s-map', 'edges': initial_map['edges'], 'vertices': vertices}
+
+
+if __name__ == "__main__":
+    project_dir = sys.argv[1]
+    logging.debug(f"Using {project_dir} as project source")
+
+    k8s_map = kubernetes_probe(project_dir)
+    import pudb;pudb.set_trace()
