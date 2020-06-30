@@ -3,12 +3,12 @@ package com.github.acedesign.anaximandermicroservices;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.symbolsolver.utils.SymbolSolverCollectionStrategy;
-import com.github.javaparser.utils.Log;
 import com.github.javaparser.utils.ProjectRoot;
 import com.github.javaparser.utils.SourceRoot;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,11 +16,8 @@ public class Parser {
     ProjectRoot sourceRoot;
     List<ParseResult<CompilationUnit>> parseResults;
 
-    public Parser(Path basePath, Path SpringAmqpPath) throws IOException {
-        Log.setAdapter(new Log.StandardOutStandardErrorAdapter());
-
+    public Parser(Path basePath) throws IOException {
         SymbolSolverCollectionStrategy c = new SymbolSolverCollectionStrategy();
-        c.collect(SpringAmqpPath);
         this.sourceRoot = c.collect(basePath);
 
         for (SourceRoot root : this.sourceRoot.getSourceRoots()) {
@@ -32,7 +29,8 @@ public class Parser {
         }
     }
 
-    public void visitFiles() {
+    public List<String> visitFiles() {
+        List<String> topics = new ArrayList<String>();
         for(ParseResult<CompilationUnit> parseResult: this.parseResults) {
             if(!parseResult.isSuccessful()) {
                 continue;
@@ -43,7 +41,12 @@ public class Parser {
                 continue;
             }
             CompilationUnit cu = optionalCompilationUnit.get();
-            cu.accept(new Visitor(), null);
+            Visitor v = new Visitor();
+            v.topics = new ArrayList<String>();
+            cu.accept(v, null);
+            topics.addAll(v.topics);
         }
+
+        return topics;
     }
 }
