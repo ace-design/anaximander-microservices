@@ -13,12 +13,14 @@ logging.basicConfig(level=logging.DEBUG)
 
 class EdgeType(Enum):
     Exposes = "exposes"
+    TCP = "tcp"
     Exchanges = "exchanges"
 
 
 class VerticeType(Enum):
     Messaging = "messaging"
     Service = "service"
+    Route = "route"
     Database = "database"
 
 
@@ -32,6 +34,12 @@ class Prop(object):
 class Vertice(object):
     type: str
     props: Set[Prop]
+
+    @property
+    def id(self):
+        for prop in self.props:
+            if prop.name == 'name':
+                return f"service-{prop.value}"
 
 
 @dataclass(eq=True, frozen=True)
@@ -89,27 +97,27 @@ def generate_initial_map():
             kalam,
         },
         "edges": {
-            Edge(_from=frontend, to=catalogue, type=EdgeType.Exposes),
-            Edge(_from=frontend, to=orders, type=EdgeType.Exposes),
+            Edge(_from=frontend, to=catalogue, type=EdgeType.TCP),
+            Edge(_from=frontend, to=orders, type=EdgeType.TCP),
 
-            Edge(_from=orders, to=payment, type=EdgeType.Exposes),
-            Edge(_from=orders, to=shipping, type=EdgeType.Exposes),
-            Edge(_from=orders, to=orders_db, type=EdgeType.Exposes),
+            Edge(_from=orders, to=payment, type=EdgeType.TCP),
+            Edge(_from=orders, to=shipping, type=EdgeType.TCP),
+            Edge(_from=orders, to=orders_db, type=EdgeType.TCP),
 
-            Edge(_from=orders, to=carts, type=EdgeType.Exposes),
-            Edge(_from=carts, to=carts_db, type=EdgeType.Exposes),
+            Edge(_from=orders, to=carts, type=EdgeType.TCP),
+            Edge(_from=carts, to=carts_db, type=EdgeType.TCP),
 
-            Edge(_from=orders, to=user, type=EdgeType.Exposes),
-            Edge(_from=user, to=user_db, type=EdgeType.Exposes),
+            Edge(_from=orders, to=user, type=EdgeType.TCP),
+            Edge(_from=user, to=user_db, type=EdgeType.TCP),
 
-            Edge(_from=shipping, to=rabbitmq, type=EdgeType.Exposes),
-            Edge(_from=queue_master, to=rabbitmq, type=EdgeType.Exposes),
+            Edge(_from=shipping, to=rabbitmq, type=EdgeType.TCP),
+            Edge(_from=queue_master, to=rabbitmq, type=EdgeType.TCP),
 
-            Edge(_from=edge_router, to=frontend, type=EdgeType.Exposes),
-            Edge(_from=poincare, to=frontend, type=EdgeType.Exposes),
-            Edge(_from=poincare, to=rabbitmq, type=EdgeType.Exposes),
-            Edge(_from=wilson, to=rabbitmq, type=EdgeType.Exposes),
-            Edge(_from=kalam, to=rabbitmq, type=EdgeType.Exposes),
+            Edge(_from=edge_router, to=frontend, type=EdgeType.TCP),
+            Edge(_from=poincare, to=frontend, type=EdgeType.TCP),
+            Edge(_from=poincare, to=rabbitmq, type=EdgeType.TCP),
+            Edge(_from=wilson, to=rabbitmq, type=EdgeType.TCP),
+            Edge(_from=kalam, to=rabbitmq, type=EdgeType.TCP),
         },
     }
 
@@ -123,6 +131,8 @@ def dict_to_map(v):
             vertice_type = VerticeType.Messaging
         elif vertice['type'] == "database":
             vertice_type = VerticeType.Database
+        elif vertice['type'] == "route":
+            vertice_type = VerticeType.Route
 
         props = set()
         for prop in vertice['props']:
@@ -158,8 +168,8 @@ def rabbitmq_probe(project_dir, current_map):
     logging.debug("Running rabbitmq probe on queue-master")
     queue_master_probe = run(["docker", "run", "-v", f"{queue_master_dir}:/mnt/k8s/", "ax-rabbitmq", "java", "-jar", "target/rabbitmq-probe-1.0-SNAPSHOT-jar-with-dependencies.jar", "/mnt/k8s/"], check=True, capture_output=True)
 
-    shipping_edge = Edge(_from=shipping, to=rabbitmq, type=EdgeType.Exposes)
-    queue_master_edge = Edge(_from=queue_master, to=rabbitmq, type=EdgeType.Exposes)
+    shipping_edge = Edge(_from=shipping, to=rabbitmq, type=EdgeType.TCP)
+    queue_master_edge = Edge(_from=queue_master, to=rabbitmq, type=EdgeType.TCP)
 
     edges = current_map['edges'].copy()
     vertices = current_map['vertices'].copy()
@@ -177,7 +187,43 @@ def rabbitmq_probe(project_dir, current_map):
         Edge(_from=queue_master, to=new_rabbitmq, type=EdgeType.Exchanges),
      ))
 
-    return {'id': 'rabbitmq-map', 'vertices': vertices, 'edges': edges}
+    return new_rabbitmq, {'id': 'rabbitmq-map', 'vertices': vertices, 'edges': edges}
+
+def swagger_probe(project_dir, current_map):
+    logging.debug("Running swagger probe on orders")
+    order_swagger = run(["docker", "run", "-v", f"{project_dir}:/mnt/k8s/", "ax-swagger", "python", "swagger.py", "/mnt/k8s/orders/api-spec/orders.json"], check=True, capture_output=True)
+
+    logging.debug("Running swagger probe on payments")
+    payment_swagger = run(["docker", "run", "-v", f"{project_dir}:/mnt/k8s/", "ax-swagger", "python", "swagger.py", "/mnt/k8s/payment/api-spec/payment.json"], check=True, capture_output=True)
+
+    order_map = dict_to_map(json.loads(order_swagger.stdout))
+    payment_map = dict_to_map(json.loads(payment_swagger.stdout))
+
+    edges = current_map['edges'].copy()
+    for v in order_map['vertices']:
+        edges.add(
+            Edge(
+                _from=orders,
+                to=v,
+                type=EdgeType.Exposes,
+            )
+        )
+
+    for v in payment_map['vertices']:
+        edges.add(
+            Edge(
+                _from=orders,
+                to=v,
+                type=EdgeType.Exposes,
+            )
+        )
+
+    return {
+        'id': 'swagger-map',
+        'vertices': current_map['vertices'] | order_map['vertices'] | payment_map['vertices'],
+        'edges': edges,
+    }
+
 
 if __name__ == "__main__":
     project_dir = sys.argv[1]
@@ -185,6 +231,5 @@ if __name__ == "__main__":
 
     initial_map = generate_initial_map()
     k8s_map = kubernetes_probe(project_dir, initial_map)
-    rabbitmq = rabbitmq_probe(project_dir, k8s_map)
-
-    import pudb;pudb.set_trace()
+    new_rabbitmq, rabbitmq_map = rabbitmq_probe(project_dir, k8s_map)
+    swagger_map = swagger_probe(project_dir, rabbitmq_map)
