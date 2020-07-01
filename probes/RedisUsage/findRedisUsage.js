@@ -55,7 +55,7 @@ function display(fContent, redisString) {
             id : service ? service[0] ? service[0] : 'sc1' : 'sc1',
             vertices : [
                 {
-                    id : 's1',
+                    id : 's0',
                     type : 'service',
                     props : [
                         {

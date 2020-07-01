@@ -81,7 +81,7 @@ function display(fContent, routes) {
         let service = fContent.file.split('/').filter(s => {
             return s.toLocaleLowerCase().indexOf('service') > -1;
         });
-        let rRoutes = []; let edges = []; let i = 1;
+        let rRoutes = []; let edges = []; let i = 0;
         routes.forEach(r => {
             rRoutes.push({
                 id : "r" + i,
@@ -100,7 +100,7 @@ function display(fContent, routes) {
             edges.push({
                 from : service ? service[0] ? service[0] : 'sc1' : 'sc1',
                 to : "r" + i,
-                type : "expose"
+                type : "exposes"
             });
             i++;
         });
