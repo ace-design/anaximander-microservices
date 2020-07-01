@@ -142,6 +142,34 @@ def dict_to_map(v):
 
     return {'edges': edges, 'vertices': vertices}
 
+def map_to_json(map):
+    edges = []
+    vertices = []
+    for edge in map['edges']:
+        if edge._from in map['vertices'] and edge.to in map['vertices']:
+            edges.append({'from': edge._from.id, 'to': edge.to.id, 'type': edge.type.value})
+        else:
+            logging.debug(f"Ignoring orphan edge from={edge._from.id} to={edge.to.id}")
+
+    for vertice in map['vertices']:
+        props = []
+        for prop in vertice.props:
+            props.append({
+                'name': prop.name,
+                'value': prop.value
+            })
+        vertices.append({
+            'id': vertice.id,
+            'type': vertice.type.value,
+            'props': props
+        })
+
+    return json.dumps({
+        'id': 'sockshop-map',
+        'vertices': vertices,
+        'edges': edges,
+    })
+
 def kubernetes_probe(project_dir, current_map):
     logging.debug("Running k8s probe")
     k8s_dir = os.path.join(project_dir, "microservices-demo/deploy/kubernetes/")
@@ -233,3 +261,5 @@ if __name__ == "__main__":
     k8s_map = kubernetes_probe(project_dir, initial_map)
     new_rabbitmq, rabbitmq_map = rabbitmq_probe(project_dir, k8s_map)
     swagger_map = swagger_probe(project_dir, rabbitmq_map)
+
+    print(map_to_json(swagger_map))
