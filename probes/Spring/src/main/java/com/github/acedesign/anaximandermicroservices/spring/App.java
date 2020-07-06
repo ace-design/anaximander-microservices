@@ -10,6 +10,6 @@ public class App
         Path basePath = Paths.get(args[0]);
         Parser parser = new Parser(basePath);
         Visitor visitor = parser.visitFiles();
-        visitor.printMap();
+        visitor.printMap(args[1]);
     }
 }
