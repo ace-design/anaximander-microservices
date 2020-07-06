@@ -65,11 +65,12 @@ public class Visitor extends VoidVisitorAdapter<Boolean> {
         super.visit(n, arg);
     }
 
-    public void printMap() {
+    public void printMap(String serviceName) {
         JSONObject map = new JSONObject();
 
         JSONArray edges = new JSONArray();
         JSONArray vertices = new JSONArray();
+
         int i = 0;
         for(RemoteCallUsage call : this.remoteCallsUsed) {
             JSONObject vertice = new JSONObject();
@@ -97,6 +98,13 @@ public class Visitor extends VoidVisitorAdapter<Boolean> {
             props.add(verb);
             props.add(path);
             vertice.put("props", props);
+
+            JSONObject edge = new JSONObject();
+            edge.put("from", "service-" + serviceName);
+            edge.put("to", "route-" + i);
+            edge.put("type", "exposes");
+            edges.add(edge);
+
             vertices.add(vertice);
             Set<String> services = new HashSet<String>();
             List<RemoteCall> remoteCalls = this.remoteCalls.get(call.sourceMethodName);
@@ -133,7 +141,7 @@ public class Visitor extends VoidVisitorAdapter<Boolean> {
                     vertice.put("props", props);
                     vertices.add(vertice);
 
-                    JSONObject edge = new JSONObject();
+                    edge = new JSONObject();
                     edge.put("from", "route-" + i);
                     edge.put("to", "route-" + call.sourceMethodName + "-" + call.remoteMethod);
                     edge.put("type", "calls");
@@ -148,6 +156,20 @@ public class Visitor extends VoidVisitorAdapter<Boolean> {
             }
             i += 1;
         }
+
+        JSONObject baseService = new JSONObject();
+        baseService.put("id", "service-" + serviceName);
+        baseService.put("type", "service");
+
+        JSONArray props = new JSONArray();
+        JSONObject prop = new JSONObject();
+        prop.put("name", "name");
+        prop.put("value", serviceName);
+        props.add(prop);
+        baseService.put("props", props);
+        vertices.add(baseService);
+
+
         map.put("edges", edges);
         map.put("vertices", vertices);
         map.put("id", "spring-map");
