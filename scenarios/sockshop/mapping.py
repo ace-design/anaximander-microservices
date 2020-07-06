@@ -15,6 +15,7 @@ class EdgeType(Enum):
     Exposes = "exposes"
     TCP = "tcp"
     Exchanges = "exchanges"
+    Calls = "calls"
 
 
 class VerticeType(Enum):
@@ -37,9 +38,21 @@ class Vertice(object):
 
     @property
     def id(self):
-        for prop in self.props:
-            if prop.name == 'name':
-                return f"service-{prop.value}"
+        if self.type in [VerticeType.Service, VerticeType.Messaging, VerticeType.Database]:
+            for prop in self.props:
+                if prop.name == 'name':
+                    return f"service-{prop.value}"
+
+            raise Exception("Vertice does not have a name")
+
+        if self.type == VerticeType.Route:
+            for prop in self.props:
+                if prop.name == 'path':
+                    path = prop.value
+                if prop.name == 'verb':
+                    verb = prop.value
+
+            return f"route-{verb}-{path}"
 
 
 @dataclass(eq=True, frozen=True)
@@ -121,8 +134,7 @@ def generate_initial_map():
         },
     }
 
-def dict_to_map(v):
-    edges = set()
+def convert_vertices(v):
     vertices = set()
 
     for vertice in v.get('vertices', []):
@@ -140,7 +152,7 @@ def dict_to_map(v):
 
         vertices.add(Vertice(type=vertice_type, props=frozenset(props)))
 
-    return {'edges': edges, 'vertices': vertices}
+    return vertices
 
 def map_to_json(map):
     edges = []
@@ -174,10 +186,10 @@ def kubernetes_probe(project_dir, current_map):
     logging.debug("Running k8s probe")
     k8s_dir = os.path.join(project_dir, "microservices-demo/deploy/kubernetes/")
     process = run(["docker", "run", "-v", f"{k8s_dir}:/mnt/k8s/", "ax-kubernetes", "python", "kubernetes.py", "/mnt/k8s"], check=True, capture_output=True)
-    probe_map = dict_to_map(json.loads(process.stdout))
+    probe_vertices = convert_vertices(json.loads(process.stdout))
 
     # Union of the current map vertices and the k8s map vertices
-    vertices = current_map['vertices'] & probe_map['vertices']
+    vertices = current_map['vertices'] & probe_vertices
 
     # Remove all "service" type vertices that are not found by the k8s probe
     for vertice in current_map['vertices']:
@@ -224,11 +236,11 @@ def swagger_probe(project_dir, current_map):
     logging.debug("Running swagger probe on payments")
     payment_swagger = run(["docker", "run", "-v", f"{project_dir}:/mnt/k8s/", "ax-swagger", "python", "swagger.py", "/mnt/k8s/payment/api-spec/payment.json"], check=True, capture_output=True)
 
-    order_map = dict_to_map(json.loads(order_swagger.stdout))
-    payment_map = dict_to_map(json.loads(payment_swagger.stdout))
+    order_vertices = convert_vertices(json.loads(order_swagger.stdout))
+    payment_vertices = convert_vertices(json.loads(payment_swagger.stdout))
 
     edges = current_map['edges'].copy()
-    for v in order_map['vertices']:
+    for v in order_vertices:
         edges.add(
             Edge(
                 _from=orders,
@@ -237,7 +249,7 @@ def swagger_probe(project_dir, current_map):
             )
         )
 
-    for v in payment_map['vertices']:
+    for v in payment_vertices:
         edges.add(
             Edge(
                 _from=orders,
@@ -248,8 +260,48 @@ def swagger_probe(project_dir, current_map):
 
     return {
         'id': 'swagger-map',
-        'vertices': current_map['vertices'] | order_map['vertices'] | payment_map['vertices'],
+        'vertices': current_map['vertices'] | order_vertices | payment_vertices,
         'edges': edges,
+    }
+
+def spring_map(project_dir, current_map):
+    logging.debug("Running spring probe on orders")
+    spring_probe = run(["docker", "run", "-v", f"{project_dir}/orders/:/mnt/repo", "ax-spring", "java", "-jar", "target/spring-probe-1.0-SNAPSHOT-jar-with-dependencies.jar", "/mnt/repo/", "orders"], check=True, capture_output=True)
+    order = json.loads(spring_probe.stdout)
+    order_vertices = convert_vertices(order)
+
+    edges = current_map['edges'].copy()
+    vertices = current_map['vertices'] | order_vertices
+    for edge in order['edges']:
+        for vertice in vertices:
+            if vertice.id == edge['from']:
+                _from = vertice
+            if vertice.id == edge['to']:
+                to = vertice
+
+        if edge['type'] == "exposes":
+            edge_type = EdgeType.Exposes
+        elif edge['type'] == "tcp":
+            edge_type = EdgeType.TCP
+        elif edge['type'] == "exchanges":
+            edge_type = EdgeType.Exchanges
+        elif edge['type'] == "calls":
+            edge_type = EdgeType.Calls
+
+        try:
+            edges.add(Edge(
+                _from=_from,
+                to=to,
+                type=edge_type
+            ))
+        except UnboundLocalError:
+            logging.error("Failed to build edge for %s", edge)
+            raise
+
+    return {
+        "id": "spring-map",
+        "vertices": vertices,
+        "edges": edges,
     }
 
 
@@ -261,5 +313,6 @@ if __name__ == "__main__":
     k8s_map = kubernetes_probe(project_dir, initial_map)
     new_rabbitmq, rabbitmq_map = rabbitmq_probe(project_dir, k8s_map)
     swagger_map = swagger_probe(project_dir, rabbitmq_map)
+    spring_map = spring_map(project_dir, swagger_map)
 
-    print(map_to_json(swagger_map))
+    print(map_to_json(spring_map))
