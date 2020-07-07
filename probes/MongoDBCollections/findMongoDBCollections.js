@@ -74,7 +74,7 @@ function display(fContent, collections) {
         collections.forEach(c => {
             mCollections.push({
                 id : "c" + i,
-                type : "collection",
+                type : "database",
                 props : [
                     {
                         name : c.varName,
