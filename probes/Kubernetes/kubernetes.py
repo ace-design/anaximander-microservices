@@ -83,7 +83,7 @@ def read_k8s(base_path, manifests):
                     if doc['kind'] == "Service":
                         ports = []
                         for port in doc['spec'].get('ports', []):
-                            ports.append(Port(name=port['name'], port=port['port'], target_port=port['targetPort']))
+                            ports.append(Port(name=port.get('name', f"port-{port['port']}:{port['targetPort']}"), port=port['port'], target_port=port['targetPort']))
                         services.append(Service(
                             id=f"s{service_count}-{doc['metadata']['name']}",
                             name=doc['metadata']['name'],
@@ -171,7 +171,6 @@ if __name__ == "__main__":
         manifests = ["*.yaml", "*.yml"]
 
     services, deployments = read_k8s(path, manifests)
-    generate_service_graph(services, deployments)
     schema = generate_schema(services)
 
     print(json.dumps(schema, sort_keys=True, indent=4))

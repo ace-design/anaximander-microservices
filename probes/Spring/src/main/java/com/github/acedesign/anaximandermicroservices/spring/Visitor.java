@@ -71,7 +71,6 @@ public class Visitor extends VoidVisitorAdapter<Boolean> {
         JSONArray edges = new JSONArray();
         JSONArray vertices = new JSONArray();
 
-        int i = 0;
         for(RemoteCallUsage call : this.remoteCallsUsed) {
             JSONObject vertice = new JSONObject();
             String verbString;
@@ -82,7 +81,7 @@ public class Visitor extends VoidVisitorAdapter<Boolean> {
             } else {
                 verbString = "unknown";
             }
-            vertice.put("id", "route-" + i);
+            vertice.put("id", "route-" + verbString + "-" + call.uri);
             vertice.put("type", "route");
             JSONArray props = new JSONArray();
 
@@ -101,7 +100,7 @@ public class Visitor extends VoidVisitorAdapter<Boolean> {
 
             JSONObject edge = new JSONObject();
             edge.put("from", "service-" + serviceName);
-            edge.put("to", "route-" + i);
+            edge.put("to", "route-" + verbString + "-" + call.uri);
             edge.put("type", "exposes");
             edges.add(edge);
 
@@ -142,7 +141,7 @@ public class Visitor extends VoidVisitorAdapter<Boolean> {
                     vertices.add(vertice);
 
                     edge = new JSONObject();
-                    edge.put("from", "route-" + i);
+                    edge.put("from", "route-" + verbString + "-" + call.uri);
                     edge.put("to", "route-" + call.sourceMethodName + "-" + call.remoteMethod);
                     edge.put("type", "calls");
                     edges.add(edge);
@@ -154,7 +153,6 @@ public class Visitor extends VoidVisitorAdapter<Boolean> {
                     edges.add(edge);
                 }
             }
-            i += 1;
         }
 
         JSONObject baseService = new JSONObject();
