@@ -185,7 +185,7 @@ def map_to_json(map):
 def kubernetes_probe(project_dir, current_map):
     logging.debug("Running k8s probe")
     k8s_dir = os.path.join(project_dir, "microservices-demo/deploy/kubernetes/")
-    process = run(["docker", "run", "-v", f"{k8s_dir}:/mnt/k8s/", "ax-kubernetes", "python", "kubernetes.py", "/mnt/k8s"], check=True, capture_output=True)
+    process = run(["docker", "run", "-v", f"{k8s_dir}:/mnt/k8s/", "acedesign/ax-kubernetes", "python", "kubernetes.py", "/mnt/k8s"], check=True, capture_output=True)
     probe_vertices = convert_vertices(json.loads(process.stdout))
 
     # Union of the current map vertices and the k8s map vertices
@@ -203,10 +203,10 @@ def rabbitmq_probe(project_dir, current_map):
     queue_master_dir = os.path.join(project_dir, "queue-master")
 
     logging.debug("Running rabbitmq probe on shipping")
-    shipping_probe = run(["docker", "run", "-v", f"{shipping_dir}:/mnt/k8s/", "ax-rabbitmq", "java", "-jar", "target/rabbitmq-probe-1.0-SNAPSHOT-jar-with-dependencies.jar", "/mnt/k8s/"], check=True, capture_output=True)
+    shipping_probe = run(["docker", "run", "-v", f"{shipping_dir}:/mnt/k8s/", "acedesign/ax-rabbitmq", "java", "-jar", "target/rabbitmq-probe-1.0-SNAPSHOT-jar-with-dependencies.jar", "/mnt/k8s/"], check=True, capture_output=True)
 
     logging.debug("Running rabbitmq probe on queue-master")
-    queue_master_probe = run(["docker", "run", "-v", f"{queue_master_dir}:/mnt/k8s/", "ax-rabbitmq", "java", "-jar", "target/rabbitmq-probe-1.0-SNAPSHOT-jar-with-dependencies.jar", "/mnt/k8s/"], check=True, capture_output=True)
+    queue_master_probe = run(["docker", "run", "-v", f"{queue_master_dir}:/mnt/k8s/", "acedesign/ax-rabbitmq", "java", "-jar", "target/rabbitmq-probe-1.0-SNAPSHOT-jar-with-dependencies.jar", "/mnt/k8s/"], check=True, capture_output=True)
 
     shipping_edge = Edge(_from=shipping, to=rabbitmq, type=EdgeType.TCP)
     queue_master_edge = Edge(_from=queue_master, to=rabbitmq, type=EdgeType.TCP)
@@ -231,10 +231,10 @@ def rabbitmq_probe(project_dir, current_map):
 
 def swagger_probe(project_dir, current_map):
     logging.debug("Running swagger probe on orders")
-    order_swagger = run(["docker", "run", "-v", f"{project_dir}:/mnt/k8s/", "ax-swagger", "python", "swagger.py", "/mnt/k8s/orders/api-spec/orders.json"], check=True, capture_output=True)
+    order_swagger = run(["docker", "run", "-v", f"{project_dir}:/mnt/k8s/", "acedesign/ax-swagger", "python", "swagger.py", "/mnt/k8s/orders/api-spec/orders.json"], check=True, capture_output=True)
 
     logging.debug("Running swagger probe on payments")
-    payment_swagger = run(["docker", "run", "-v", f"{project_dir}:/mnt/k8s/", "ax-swagger", "python", "swagger.py", "/mnt/k8s/payment/api-spec/payment.json"], check=True, capture_output=True)
+    payment_swagger = run(["docker", "run", "-v", f"{project_dir}:/mnt/k8s/", "acedesign/ax-swagger", "python", "swagger.py", "/mnt/k8s/payment/api-spec/payment.json"], check=True, capture_output=True)
 
     order_vertices = convert_vertices(json.loads(order_swagger.stdout))
     payment_vertices = convert_vertices(json.loads(payment_swagger.stdout))
@@ -266,7 +266,7 @@ def swagger_probe(project_dir, current_map):
 
 def spring_map(project_dir, current_map):
     logging.debug("Running spring probe on orders")
-    spring_probe = run(["docker", "run", "-v", f"{project_dir}/orders/:/mnt/repo", "ax-spring", "java", "-jar", "target/spring-probe-1.0-SNAPSHOT-jar-with-dependencies.jar", "/mnt/repo/", "orders"], check=True, capture_output=True)
+    spring_probe = run(["docker", "run", "-v", f"{project_dir}/orders/:/mnt/repo", "acedesign/ax-spring", "java", "-jar", "target/spring-probe-1.0-SNAPSHOT-jar-with-dependencies.jar", "/mnt/repo/", "orders"], check=True, capture_output=True)
     order = json.loads(spring_probe.stdout)
     order_vertices = convert_vertices(order)
 
