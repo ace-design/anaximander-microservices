@@ -1,4 +1,4 @@
-FROM probeutiljs
+FROM node:10
 
 WORKDIR /srv/util
 
