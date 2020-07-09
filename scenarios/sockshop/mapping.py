@@ -252,7 +252,7 @@ def swagger_probe(project_dir, current_map):
     for v in payment_vertices:
         edges.add(
             Edge(
-                _from=orders,
+                _from=payment,
                 to=v,
                 type=EdgeType.Exposes,
             )
@@ -273,11 +273,16 @@ def spring_map(project_dir, current_map):
     edges = current_map['edges'].copy()
     vertices = current_map['vertices'] | order_vertices
     for edge in order['edges']:
+        _from = None
+        to = None
         for vertice in vertices:
             if vertice.id == edge['from']:
                 _from = vertice
             if vertice.id == edge['to']:
                 to = vertice
+
+        if _from is None or to is None:
+            raise Exception(f"Failed to create edge for vertice {vertice}")
 
         if edge['type'] == "exposes":
             edge_type = EdgeType.Exposes
