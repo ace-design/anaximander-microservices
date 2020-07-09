@@ -19,7 +19,7 @@ function formatRoute(routesMerged) {
         let methods = route.props.filter(v => v.name === "verb");
         let method = methods.map(c => `${c.value.toLocaleUpperCase()} | `).join('');
         method = method.substr(0, method.length - 2);
-        result += `${route.id.replace(/-/g, '_')} [label="{${path} | { ${method}}}", shape=record];\n`;
+        result += `"${route.id.replace(/-/g, '_')}" [label="{${path} | { ${method}}}", shape=record];\n`;
     });
     return result;
 }
@@ -27,7 +27,7 @@ function formatRoute(routesMerged) {
 function mapEdges(edges) {
     let result = "";
     edges.forEach(e => {
-        result += `${e.from.replace(/-/g, '_')} -> ${e.to.replace(/-/g, '_')} [style=dashed, label="${e.type}"] \n`;
+        result += `"${e.from.replace(/-/g, '_')}" -> "${e.to.replace(/-/g, '_')}" [style=dashed, label="${e.type}"] \n`;
     });
     return result;
 }
@@ -50,7 +50,7 @@ function mapVertices(data) {
     let vertices = data.vertices.filter(v => v.type !== "route");
     vertices.forEach(v => {
         let name = v.props.find(ve => ve.name === "name").value;
-        result += `${v.id.replace(/-/g, '_')} [label="${name}", shape=ellipse];\n`;
+        result += `"${v.id.replace(/-/g, '_')}" [label="${name}", shape=ellipse];\n`;
     });
     return result;
 }
