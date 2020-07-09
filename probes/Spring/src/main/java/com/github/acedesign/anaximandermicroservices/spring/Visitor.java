@@ -123,7 +123,7 @@ public class Visitor extends VoidVisitorAdapter<Boolean> {
                     }
 
                     vertice = new JSONObject();
-                    vertice.put("id", "route-" + call.sourceMethodName + "-" + call.remoteMethod);
+                    vertice.put("id", "route-" + call.remoteMethod + "-" + r.uri);
                     vertice.put("type", "route");
 
                     verb = new JSONObject();
@@ -142,13 +142,13 @@ public class Visitor extends VoidVisitorAdapter<Boolean> {
 
                     edge = new JSONObject();
                     edge.put("from", "route-" + verbString + "-" + call.uri);
-                    edge.put("to", "route-" + call.sourceMethodName + "-" + call.remoteMethod);
+                    edge.put("to", "route-"  + call.remoteMethod + "-" + r.uri);
                     edge.put("type", "calls");
                     edges.add(edge);
 
                     edge = new JSONObject();
                     edge.put("from","service-" + r.hostname);
-                    edge.put("to", "route-" + call.sourceMethodName + "-" + call.remoteMethod);
+                    edge.put("to", "route-"  + call.remoteMethod + "-" + r.uri);
                     edge.put("type", "exposes");
                     edges.add(edge);
                 }
