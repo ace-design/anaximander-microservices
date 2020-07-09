@@ -252,7 +252,7 @@ def swagger_probe(project_dir, current_map):
     for v in payment_vertices:
         edges.add(
             Edge(
-                _from=orders,
+                _from=payment,
                 to=v,
                 type=EdgeType.Exposes,
             )
