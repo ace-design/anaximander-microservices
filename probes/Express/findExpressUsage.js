@@ -1,6 +1,7 @@
 const walkers = require('../../util/walkers');
 const aParser = require('../../util/acornParser');
 const fFiles = require('../../util/findFiles');
+const path = require('path');
 const fs = require('fs');
 
 (async function() {
@@ -16,23 +17,28 @@ const fs = require('fs');
     else if (fs.lstatSync(file).isDirectory()) {
         let results = await fFiles.walk(file);
         results.forEach( subFile => {
-            filesContent.push({
-                file : subFile,
-                body : aParser.acornParser(subFile),
-            });
+            if (subFile.endsWith(".js")) {
+                filesContent.push({
+                    file: subFile,
+                    body: aParser.acornParser(subFile),
+                });
+            }
         });
     }
-    let returnString = '';
+    let returnString = '[';
     filesContent.forEach(fC => {
         let resultString = getExpress(fC.body);
-        returnString += JSON.stringify(display(fC, resultString[0], resultString[1]));
+        if (resultString) returnString += JSON.stringify(display(fC, resultString[0], resultString[1])) + ",";
     });
+    returnString = returnString.slice(0, -1);
+    returnString += "]";
     console.log(returnString);
     return returnString;
 }())
 
 function getExpress(body) {
     let expressString = walkers.recursiveWalkIn(body, "Literal", "express");
+    if (!expressString[0]) return null;
     expressString = expressString[1][0][0].value;
     let appString = walkers.recursiveWalkInArray(body, "Identifier", expressString);
     appString = appString[appString.length -1];
@@ -51,11 +57,17 @@ function getExpress(body) {
 
 function display(fContent, expressString, appString) {
     if (expressString && appString) {
-        let service = fContent.file.split('/').filter(s => {
+        let service = fContent.file.split(path.sep).filter(s => {
             return s.toLocaleLowerCase().indexOf('service') > -1;
-        })
+        });
+        let serviceName = service[0];
+        if (!service || service.length === 0) {
+            let serv = fContent.file.split(path.sep);
+            console.log(serv);
+            serviceName = serv[serv.length -2];
+        }
         return {
-            id : service ? service[0] ? service[0] : 'sc1' : 'sc1',
+            id : serviceName ? serviceName : "sc1",
             vertices : [
                 {
                     id : 's1',

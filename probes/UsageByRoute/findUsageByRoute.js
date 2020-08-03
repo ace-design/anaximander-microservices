@@ -1,6 +1,7 @@
 const walkers = require('../../util/walkers');
 const aParser = require('../../util/acornParser');
 const fFiles = require('../../util/findFiles');
+const path = require('path');
 const fs = require('fs');
 
 (async function() {
@@ -16,13 +17,15 @@ const fs = require('fs');
     else if (fs.lstatSync(file).isDirectory()) {
         let results = await fFiles.walk(file);
         results.forEach( subFile => {
-            filesContent.push({
-                file : subFile,
-                body : aParser.acornParser(subFile),
-            });
+            if (subFile.endsWith(".js")) {
+                filesContent.push({
+                    file: subFile,
+                    body: aParser.acornParser(subFile),
+                });
+            }
         });
     }
-    let returnString = [];
+    let returnString = "[";
     filesContent.forEach(fC => {
         let vertices = []; let i = 0;
         let redisClient = getRedisClient(fC.body, getRedis(fC.body));
@@ -32,11 +35,16 @@ const fs = require('fs');
             route.id = "r" + i;
             i++;
             let resultString = getUsageByRoutes(fC.body, route, redisClient, mongoCollections.length > 0, mongoCollections);
-            vertices.push(formatVertice(fC, route, resultString));
+            if (resultString) vertices.push(formatVertice(fC, route, resultString));
         });
-        returnString.push(display(fC, vertices));
+        if(vertices.length > 0) {
+            returnString += JSON.stringify(display(fC, vertices));
+            returnString += ",";
+        }
     });
-    console.log(JSON.stringify(returnString));
+    returnString = returnString.slice(0, -1);
+    returnString += "]";
+    console.log(returnString);
     return returnString;
 }())
 
@@ -107,6 +115,7 @@ function getRoutes(body, appString) {
 
 function findAppString(body) {
     let expressString = walkers.recursiveWalkIn(body, "Literal", "express");
+    if (!expressString[0]) return null;
     expressString = expressString[1][0][0].value;
     let appString = walkers.recursiveWalkInArray(body, "Identifier", expressString);
     appString = appString[appString.length -1];
@@ -206,7 +215,7 @@ function formatVertice(fContent, route, result) {
                 },
                 {
                     name : "verb",
-                    value: route.type,
+                    value: route.type.toUpperCase(),
                 }
             ]
         };
@@ -216,7 +225,7 @@ function formatVertice(fContent, route, result) {
                 value : true
             })
         }
-        if (result.mongoCollections.length > 0) {
+        if (typeof result.mongoCollections === "object" && result.mongoCollections.length > 0) {
             result.mongoCollections.forEach( mc => {
                 graphJSON = objectHasMongoCollections(graphJSON);
                 let index = getMongoCollectionsIndex(graphJSON);
@@ -232,7 +241,6 @@ function formatVertice(fContent, route, result) {
                 }
             })
         }
-        console.log(graphJSON.props);
         return graphJSON;
     }
 }
@@ -263,11 +271,16 @@ function getMongoCollectionsIndex(graphJSON) {
 }
 
 function display(fContent, vertices) {
-    let service = fContent.file.split('/').filter(s => {
+    let service = fContent.file.split(path.sep).filter(s => {
         return s.toLocaleLowerCase().indexOf('service') > -1;
     });
+    let serviceName = service[0];
+    if (!service || service.length === 0) {
+        let serv = fContent.file.split(path.sep);
+        serviceName = serv[serv.length -2];
+    }
     return {
-        id : service ? service[0] ? service[0] : 'sc1' : 'sc1',
+        id : serviceName ? serviceName : "sc1",
         vertices : vertices
     }
 }

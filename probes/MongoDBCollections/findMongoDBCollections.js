@@ -1,6 +1,7 @@
 const walkers = require('../../util/walkers');
 const aParser = require('../../util/acornParser');
 const fFiles = require('../../util/findFiles');
+const path = require('path');
 const fs = require('fs');
 
 (async function() {
@@ -16,17 +17,22 @@ const fs = require('fs');
     else if (fs.lstatSync(file).isDirectory()) {
         let results = await fFiles.walk(file);
         results.forEach( subFile => {
-            filesContent.push({
-                file : subFile,
-                body : aParser.acornParser(subFile),
-            });
+            if (subFile.endsWith(".js")) {
+                filesContent.push({
+                    file: subFile,
+                    body: aParser.acornParser(subFile),
+                });
+            }
         });
     }
-    let returnString = '';
+    let returnString = '[';
     filesContent.forEach(fC => {
         let collections = getMongoCollection(fC.body);
-        returnString += JSON.stringify(display(fC, collections));
+        let displayString = JSON.stringify(display(fC, collections));
+        if (displayString && displayString !== "null") returnString += displayString + ",";
     });
+    returnString = returnString.slice(0, -1);
+    returnString += "]";
     console.log(returnString);
     return returnString;
 }())
@@ -34,6 +40,7 @@ const fs = require('fs');
 function getMongoCollection(body) {
     let collections = [];
     let [success, mongoConnect, ancestors] = walkers.recursiveWalkIn(body, "Identifier", "connect");
+    if (!success) return null;
     let ancestorsDbClient = ancestors[2];
     let dbClient, db;
     if (ancestorsDbClient.arguments[1].params[1].name) {
@@ -66,10 +73,16 @@ function getMongoCollection(body) {
 }
 
 function display(fContent, collections) {
+    if (!collections) return null;
     if (collections.length > 1) {
-        let service = fContent.file.split('/').filter(s => {
+        let service = fContent.file.split(path.sep).filter(s => {
             return s.toLocaleLowerCase().indexOf('service') > -1;
         });
+        let serviceName = service[0];
+        if (!service || service.length === 0) {
+            let serv = fContent.file.split(path.sep);
+            serviceName = serv[serv.length -2];
+        }
         let mCollections = []; let i = 1;
         collections.forEach(c => {
             mCollections.push({
@@ -85,7 +98,7 @@ function display(fContent, collections) {
             i++;
         });
         return {
-            id : service ? service[0] ? service[0] : 'sc1' : 'sc1',
+            id : serviceName ? serviceName : "sc1",
             vertices : mCollections
         };
     }

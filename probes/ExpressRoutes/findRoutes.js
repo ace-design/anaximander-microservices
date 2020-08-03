@@ -1,6 +1,7 @@
 const walkers = require('../../util/walkers');
 const aParser = require('../../util/acornParser');
 const fFiles = require('../../util/findFiles');
+const path = require('path');
 const fs = require('fs');
 
 (async function() {
@@ -16,18 +17,23 @@ const fs = require('fs');
     else if (fs.lstatSync(file).isDirectory()) {
         let results = await fFiles.walk(file);
         results.forEach( subFile => {
-            filesContent.push({
-                file : subFile,
-                body : aParser.acornParser(subFile),
-            });
+            if (subFile.endsWith(".js")) {
+                filesContent.push({
+                    file: subFile,
+                    body: aParser.acornParser(subFile),
+                });
+            }
         });
     }
-    let returnString = '';
+    let returnString = '[';
     filesContent.forEach(fC => {
         let appString = findAppString(fC.body);
         let routes = getRoutes(fC.body, appString);
-        returnString += JSON.stringify(display(fC, routes));
+        let preReturn = JSON.stringify(display(fC, routes));
+        if (preReturn) returnString += preReturn + ",";
     });
+    returnString = returnString.slice(0, -1);
+    returnString += "]";
     console.log(returnString);
     return returnString;
 }())
@@ -60,6 +66,7 @@ function getRoutes(body, appString) {
 
 function findAppString(body) {
     let expressString = walkers.recursiveWalkIn(body, "Literal", "express");
+    if (!expressString[0]) return null;
     expressString = expressString[1][0][0].value;
     let appString = walkers.recursiveWalkInArray(body, "Identifier", expressString);
     appString = appString[appString.length -1];
@@ -78,9 +85,14 @@ function findAppString(body) {
 
 function display(fContent, routes) {
     if (routes.length > 1) {
-        let service = fContent.file.split('/').filter(s => {
+        let service = fContent.file.split(path.sep).filter(s => {
             return s.toLocaleLowerCase().indexOf('service') > -1;
         });
+        let serviceName = service[0];
+        if (!service || service.length === 0) {
+            let serv = fContent.file.split(path.sep);
+            serviceName = serv[serv.length -2];
+        }
         let rRoutes = []; let edges = []; let i = 0;
         routes.forEach(r => {
             rRoutes.push({
@@ -98,14 +110,14 @@ function display(fContent, routes) {
                 ]
             });
             edges.push({
-                from : service ? service[0] ? service[0] : 'sc1' : 'sc1',
+                from : serviceName ? serviceName : 'sc1',
                 to : "r" + i,
                 type : "exposes"
             });
             i++;
         });
         return {
-            id : service ? service[0] ? service[0] : 'sc1' : 'sc1',
+            id : serviceName ? serviceName : "sc1",
             vertices : rRoutes,
             edges : edges
         };
