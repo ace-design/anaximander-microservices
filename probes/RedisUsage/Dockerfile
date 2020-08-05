@@ -8,8 +8,8 @@ RUN npm install
 
 #Bundle App Source
 COPY . .
-RUN sed -i 's/\.\.\/\.\.\/util/\.\/util/g' findRedisUsage.js
+RUN sed -i 's/\.\.\/\.\.\/util/\.\/util/g' index.js
 
 #Run the app
-CMD [ "node", "findRedisUsage.js" ]
+CMD [ "node", "index.js" ]
 

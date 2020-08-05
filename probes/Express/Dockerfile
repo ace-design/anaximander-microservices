@@ -8,8 +8,8 @@ RUN npm install
 
 #Bundle App Source
 COPY . .
-RUN sed -i 's/\.\.\/\.\.\/util/\.\/util/g' findExpressUsage.js
+RUN sed -i 's/\.\.\/\.\.\/util/\.\/util/g' index.js
 
 #Run the app
-CMD [ "node", "findExpressUsage.js" ]
+CMD [ "node", "index.js" ]
 
